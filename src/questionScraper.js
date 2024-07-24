@@ -1,5 +1,3 @@
-// questionScraper.js
-
 export function scrapeQuestionAndOptions() {
 	try {
 		console.log("Starting scrape function");
@@ -9,12 +7,9 @@ export function scrapeQuestionAndOptions() {
 			`Found ${elements.length} elements with class 'qns-view-box'`
 		);
 
-		if (elements.length === 0) {
-			return { error: "No elements found with class 'qns-view-box'" };
-		}
-
 		const newTags = ["question", "opta", "optb", "optc", "optd", "soln"];
 		let result = "";
+		let correctOption = null;
 
 		if (elements.length > 0) {
 			let current = elements[1];
@@ -33,42 +28,36 @@ export function scrapeQuestionAndOptions() {
 				const listItems = ultimateParentUl.querySelectorAll("li");
 				console.log(`Found ${listItems.length} list items`);
 
-				let correctOptionFound = false;
-				for (let i = 0; i < listItems.length; i++) {
-					if (listItems[i].querySelector(".correctness")) {
-						correctOptionFound = true;
-						elements.forEach((element, j) => {
-							if (j < newTags.length) {
-								const newElement = document.createElement(
-									newTags[j]
-								);
-								newElement.innerHTML = element.innerHTML;
-								result += newElement.outerHTML + "\n\n";
-							}
-						});
-						result += `<correctOption>${i}</correctOption>\n\n`;
-						break;
+				listItems.forEach((item, index) => {
+					if (item.querySelector(".correctness")) {
+						correctOption = index;
 					}
-				}
+				});
 
-				if (!correctOptionFound) {
-					return { error: "No correct option found" };
+				elements.forEach((element, j) => {
+					if (j < newTags.length) {
+						const newElement = document.createElement(newTags[j]);
+						newElement.innerHTML = element.innerHTML;
+						result += newElement.outerHTML + "\n\n";
+					}
+				});
+
+				if (correctOption !== null) {
+					result += `<correctOption>${correctOption}</correctOption>\n\n`;
 				}
-			} else {
-				return { error: "Could not find parent UL element" };
 			}
-		}
-
-		if (result === "") {
-			return { error: "No data was scraped" };
 		}
 
 		console.log("Scraped data:", result);
 		return {
-			parsedContent: result,
+			parsedContent: result || null,
+			error: null,
 		};
 	} catch (error) {
 		console.error("Error in scrapeQuestionAndOptions:", error);
-		return { error: error.message };
+		return {
+			parsedContent: null,
+			error: error.message,
+		};
 	}
 }

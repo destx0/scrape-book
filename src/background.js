@@ -123,8 +123,6 @@ function clickNextButton() {
 }
 
 function checkForModal() {
-	// This function checks for the presence of a modal
-	// You may need to adjust the selector based on the specific modal implementation on Testbook
 	const modal = document.querySelector(".modal-backdrop");
 	return !!modal;
 }
