@@ -1,0 +1,35 @@
+.popup-container {
+  width: 300px;
+  padding: 20px;
+  text-align: center;
+}
+
+.popup-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 10px;
+}
+
+.popup-title {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.toggle-button {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.message {
+  margin-top: 10px;
+  font-style: italic;
+}
