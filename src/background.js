@@ -73,6 +73,37 @@ chrome.runtime.onConnect.addListener(function (p) {
 					);
 				}
 			);
+		} else if (msg.action === "checkModal") {
+			chrome.tabs.query(
+				{ active: true, currentWindow: true },
+				function (tabs) {
+					chrome.scripting.executeScript(
+						{
+							target: { tabId: tabs[0].id },
+							function: checkForModal,
+						},
+						function (results) {
+							console.log("Modal check results:", results);
+							if (
+								results &&
+								results[0] &&
+								results[0].result !== undefined
+							) {
+								port.postMessage({
+									action: "checkModalResult",
+									isModalPresent: results[0].result,
+								});
+							} else {
+								port.postMessage({
+									action: "checkModalResult",
+									isModalPresent: false,
+									error: "Failed to check for modal",
+								});
+							}
+						}
+					);
+				}
+			);
 		}
 	});
 });
@@ -89,4 +120,11 @@ function clickNextButton() {
 		console.log("Next button not found");
 		return false;
 	}
+}
+
+function checkForModal() {
+	// This function checks for the presence of a modal
+	// You may need to adjust the selector based on the specific modal implementation on Testbook
+	const modal = document.querySelector(".modal-backdrop");
+	return !!modal;
 }

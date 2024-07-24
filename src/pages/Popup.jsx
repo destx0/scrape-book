@@ -26,6 +26,10 @@ export default function Popup() {
 				} else {
 					setMessage(`Failed to scrape question: ${msg.error}`);
 				}
+			} else if (msg.action === "checkModalResult") {
+				setMessage(
+					msg.isModalPresent ? "Modal is present" : "No modal found"
+				);
 			}
 		});
 
@@ -49,6 +53,10 @@ export default function Popup() {
 		sendMessage("scrapeQuestion");
 	};
 
+	const handleCheckModal = () => {
+		sendMessage("checkModal");
+	};
+
 	return (
 		<div className="popup-container">
 			<img
@@ -70,6 +78,13 @@ export default function Popup() {
 				disabled={isLoading}
 			>
 				Scrape Question
+			</button>
+			<button
+				onClick={handleCheckModal}
+				className="check-modal-button"
+				disabled={isLoading}
+			>
+				Check for Modal
 			</button>
 			{isLoading && <p className="loading">Loading...</p>}
 			{message && <p className="message">{message}</p>}
