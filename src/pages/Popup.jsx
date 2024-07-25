@@ -3,7 +3,7 @@ import "./Popup.css";
 
 export default function Popup() {
 	const [message, setMessage] = useState("");
-	const [scrapedData, setScrapedData] = useState("");
+	const [scrapedData, setScrapedData] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [port, setPort] = useState(null);
 
@@ -22,7 +22,7 @@ export default function Popup() {
 			} else if (msg.action === "scrapeQuestionResult") {
 				if (msg.success) {
 					setMessage("Question scraped successfully");
-					setScrapedData(msg.data);
+					setScrapedData((prevData) => [...prevData, msg.data]);
 				} else {
 					setMessage(`Failed to scrape question: ${msg.error}`);
 				}
@@ -33,7 +33,7 @@ export default function Popup() {
 			} else if (msg.action === "scrapeAllResult") {
 				if (msg.success) {
 					setMessage("All questions scraped successfully");
-					setScrapedData(JSON.stringify(msg.data, null, 2));
+					setScrapedData(msg.data);
 				} else {
 					setMessage(`Failed to scrape all questions: ${msg.error}`);
 				}
@@ -48,7 +48,6 @@ export default function Popup() {
 	const sendMessage = (action) => {
 		setIsLoading(true);
 		setMessage("");
-		setScrapedData("");
 		port.postMessage({ action });
 	};
 
@@ -66,6 +65,31 @@ export default function Popup() {
 
 	const handleScrapeAll = () => {
 		sendMessage("scrapeAll");
+	};
+
+	const handleDownloadData = () => {
+		const jsonString = JSON.stringify(scrapedData, null, 2);
+		const blob = new Blob([jsonString], { type: "application/json" });
+		const url = URL.createObjectURL(blob);
+
+		chrome.downloads.download(
+			{
+				url: url,
+				filename: "scraped_data.json",
+				saveAs: true,
+			},
+			(downloadId) => {
+				if (chrome.runtime.lastError) {
+					console.error(chrome.runtime.lastError);
+					setMessage(
+						`Failed to download data: ${chrome.runtime.lastError.message}`
+					);
+				} else {
+					setMessage("Data downloaded successfully");
+				}
+				URL.revokeObjectURL(url);
+			}
+		);
 	};
 
 	return (
@@ -104,12 +128,19 @@ export default function Popup() {
 			>
 				Scrape All Questions
 			</button>
+			<button
+				onClick={handleDownloadData}
+				className="download-button"
+				disabled={isLoading}
+			>
+				Download Scraped Data
+			</button>
 			{isLoading && <p className="loading">Loading...</p>}
 			{message && <p className="message">{message}</p>}
-			{scrapedData && (
+			{scrapedData.length > 0 && (
 				<div className="scraped-data">
 					<h2>Scraped Data:</h2>
-					<pre>{scrapedData}</pre>
+					<pre>{JSON.stringify(scrapedData, null, 2)}</pre>
 				</div>
 			)}
 		</div>
