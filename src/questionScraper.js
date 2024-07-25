@@ -2,13 +2,33 @@ export function scrapeQuestionAndOptions() {
 	try {
 		console.log("Starting scrape function");
 
+		let result = "";
+
+		// Check for aei-comprehension elements
+		const comprehensionElements =
+			document.querySelectorAll(".aei-comprehension");
+		console.log(
+			`Found ${comprehensionElements.length} elements with class 'aei-comprehension'`
+		);
+
+		if (comprehensionElements.length > 0) {
+			const comprehensionElement =
+				document.createElement("comprehension");
+			comprehensionElements.forEach((element) => {
+				const divs = element.querySelectorAll("div");
+				if (divs.length >= 2) {
+					comprehensionElement.innerHTML += divs[1].innerHTML;
+				}
+			});
+			result += comprehensionElement.outerHTML + "\n\n";
+		}
+
 		const elements = Array.from(document.querySelectorAll(".qns-view-box"));
 		console.log(
 			`Found ${elements.length} elements with class 'qns-view-box'`
 		);
 
 		const newTags = ["question", "opta", "optb", "optc", "optd", "soln"];
-		let result = "";
 		let correctOption = null;
 
 		if (elements.length > 0) {

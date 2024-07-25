@@ -1,0 +1,117 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+body {
+  font-family: 'Roboto', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f0f2f5;
+}
+
+.popup-container {
+  width: 300px;
+  padding: 20px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.popup-icon {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+}
+
+.popup-title {
+  font-size: 24px;
+  font-weight: 500;
+  color: #333;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.1s;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+.next-button {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.next-button:hover {
+  background-color: #45a049;
+}
+
+.scrape-button {
+  background-color: #2196F3;
+  color: white;
+}
+
+.scrape-button:hover {
+  background-color: #1e87db;
+}
+
+.scrape-all-button {
+  background-color: #FF9800;
+  color: white;
+}
+
+.scrape-all-button:hover {
+  background-color: #e68a00;
+}
+
+.download-button {
+  background-color: #9C27B0;
+  color: white;
+}
+
+.download-button:hover {
+  background-color: #8e24aa;
+}
+
+button:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+button:disabled:hover {
+  transform: none;
+}
+
+.loading {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+.scraped-data {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #e8f5e9;
+  border-radius: 4px;
+}
+
+.scraped-data h2 {
+  font-size: 16px;
+  color: #2e7d32;
+  margin: 0;
+}
