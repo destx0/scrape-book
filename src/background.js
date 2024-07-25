@@ -3,6 +3,7 @@ import { scrapeQuestionAndOptions } from "./questionScraper.js";
 console.log("Background script loaded");
 
 let port;
+let allQuestions = [];
 
 chrome.runtime.onConnect.addListener(function (p) {
 	port = p;
@@ -11,21 +12,16 @@ chrome.runtime.onConnect.addListener(function (p) {
 	port.onMessage.addListener(function (msg) {
 		console.log("Message received in background script:", msg);
 		if (msg.action === "clickNext") {
-			executeScriptInActiveTab(clickNextButton, "clickNextResult");
+			executeScriptInActiveTab(clickNextButton);
 		} else if (msg.action === "scrapeQuestion") {
-			executeScriptInActiveTab(
-				scrapeQuestionAndOptions,
-				"scrapeQuestionResult"
-			);
-		} else if (msg.action === "checkModal") {
-			executeScriptInActiveTab(checkForModal, "checkModalResult");
+			executeScriptInActiveTab(scrapeQuestionAndOptions);
 		} else if (msg.action === "scrapeAll") {
 			scrapeAllQuestions();
 		}
 	});
 });
 
-function executeScriptInActiveTab(func, responseAction) {
+function executeScriptInActiveTab(func) {
 	chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
 		chrome.scripting.executeScript(
 			{
@@ -33,12 +29,18 @@ function executeScriptInActiveTab(func, responseAction) {
 				function: func,
 			},
 			function (results) {
-				console.log(`${responseAction} results:`, results);
-				port.postMessage({
-					action: responseAction,
-					success: results && results[0] && results[0].result,
-					data: results && results[0] && results[0].result,
-				});
+				if (
+					results &&
+					results[0] &&
+					results[0].result &&
+					results[0].result.parsedContent
+				) {
+					allQuestions.push(results[0].result.parsedContent);
+					port.postMessage({
+						action: "updateScrapedData",
+						data: allQuestions,
+					});
+				}
 			}
 		);
 	});
@@ -50,12 +52,9 @@ function clickNextButton() {
 	);
 	if (nextButton) {
 		nextButton.click();
-		console.log("Next button clicked");
 		return true;
-	} else {
-		console.log("Next button not found");
-		return false;
 	}
+	return false;
 }
 
 function checkForModal() {
@@ -64,7 +63,7 @@ function checkForModal() {
 }
 
 async function scrapeAllQuestions() {
-	let allQuestions = [];
+	allQuestions = [];
 	let isModalPresent = false;
 
 	while (!isModalPresent) {
@@ -80,8 +79,17 @@ async function scrapeAllQuestions() {
 				function: scrapeQuestionAndOptions,
 			});
 
-			if (scrapeResult && scrapeResult[0] && scrapeResult[0].result) {
-				allQuestions.push(scrapeResult[0].result);
+			if (
+				scrapeResult &&
+				scrapeResult[0] &&
+				scrapeResult[0].result &&
+				scrapeResult[0].result.parsedContent
+			) {
+				allQuestions.push(scrapeResult[0].result.parsedContent);
+				port.postMessage({
+					action: "updateScrapedData",
+					data: allQuestions,
+				});
 			}
 
 			const clickResult = await chrome.scripting.executeScript({
@@ -94,7 +102,7 @@ async function scrapeAllQuestions() {
 			}
 
 			// Wait for the page to load
-			await new Promise((resolve) => setTimeout(resolve, 20));
+			await new Promise((resolve) => setTimeout(resolve, 1));
 
 			const modalCheckResult = await chrome.scripting.executeScript({
 				target: { tabId: tab.id },
@@ -107,18 +115,12 @@ async function scrapeAllQuestions() {
 				modalCheckResult[0].result;
 		} catch (error) {
 			console.error("Error in scrapeAllQuestions:", error);
-			port.postMessage({
-				action: "scrapeAllResult",
-				success: false,
-				error: error.message,
-			});
-			return;
+			break;
 		}
 	}
 
 	port.postMessage({
-		action: "scrapeAllResult",
-		success: true,
+		action: "scrapeAllComplete",
 		data: allQuestions,
 	});
 }

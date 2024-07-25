@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import "./Popup.css";
 
 export default function Popup() {
-	const [message, setMessage] = useState("");
 	const [scrapedData, setScrapedData] = useState([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [port, setPort] = useState(null);
@@ -12,31 +11,12 @@ export default function Popup() {
 		setPort(newPort);
 
 		newPort.onMessage.addListener(function (msg) {
-			setIsLoading(false);
-			if (msg.action === "clickNextResult") {
-				setMessage(
-					msg.success
-						? "Next button clicked successfully"
-						: "Failed to click next button"
-				);
-			} else if (msg.action === "scrapeQuestionResult") {
-				if (msg.success) {
-					setMessage("Question scraped successfully");
-					setScrapedData((prevData) => [...prevData, msg.data]);
-				} else {
-					setMessage(`Failed to scrape question: ${msg.error}`);
-				}
-			} else if (msg.action === "checkModalResult") {
-				setMessage(
-					msg.isModalPresent ? "Modal is present" : "No modal found"
-				);
-			} else if (msg.action === "scrapeAllResult") {
-				if (msg.success) {
-					setMessage("All questions scraped successfully");
-					setScrapedData(msg.data);
-				} else {
-					setMessage(`Failed to scrape all questions: ${msg.error}`);
-				}
+			if (
+				msg.action === "updateScrapedData" ||
+				msg.action === "scrapeAllComplete"
+			) {
+				setScrapedData(msg.data);
+				setIsLoading(false);
 			}
 		});
 
@@ -47,7 +27,6 @@ export default function Popup() {
 
 	const sendMessage = (action) => {
 		setIsLoading(true);
-		setMessage("");
 		port.postMessage({ action });
 	};
 
@@ -57,10 +36,6 @@ export default function Popup() {
 
 	const handleScrapeQuestion = () => {
 		sendMessage("scrapeQuestion");
-	};
-
-	const handleCheckModal = () => {
-		sendMessage("checkModal");
 	};
 
 	const handleScrapeAll = () => {
@@ -78,15 +53,7 @@ export default function Popup() {
 				filename: "scraped_data.json",
 				saveAs: true,
 			},
-			(downloadId) => {
-				if (chrome.runtime.lastError) {
-					console.error(chrome.runtime.lastError);
-					setMessage(
-						`Failed to download data: ${chrome.runtime.lastError.message}`
-					);
-				} else {
-					setMessage("Data downloaded successfully");
-				}
+			() => {
 				URL.revokeObjectURL(url);
 			}
 		);
@@ -115,13 +82,6 @@ export default function Popup() {
 				Scrape Question
 			</button>
 			<button
-				onClick={handleCheckModal}
-				className="check-modal-button"
-				disabled={isLoading}
-			>
-				Check for Modal
-			</button>
-			<button
 				onClick={handleScrapeAll}
 				className="scrape-all-button"
 				disabled={isLoading}
@@ -131,16 +91,14 @@ export default function Popup() {
 			<button
 				onClick={handleDownloadData}
 				className="download-button"
-				disabled={isLoading}
+				disabled={isLoading || scrapedData.length === 0}
 			>
 				Download Scraped Data
 			</button>
 			{isLoading && <p className="loading">Loading...</p>}
-			{message && <p className="message">{message}</p>}
 			{scrapedData.length > 0 && (
 				<div className="scraped-data">
-					<h2>Scraped Data:</h2>
-					<pre>{JSON.stringify(scrapedData, null, 2)}</pre>
+					<h2>Scraped Questions: {scrapedData.length}</h2>
 				</div>
 			)}
 		</div>
