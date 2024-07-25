@@ -30,6 +30,13 @@ export default function Popup() {
 				setMessage(
 					msg.isModalPresent ? "Modal is present" : "No modal found"
 				);
+			} else if (msg.action === "scrapeAllResult") {
+				if (msg.success) {
+					setMessage("All questions scraped successfully");
+					setScrapedData(JSON.stringify(msg.data, null, 2));
+				} else {
+					setMessage(`Failed to scrape all questions: ${msg.error}`);
+				}
 			}
 		});
 
@@ -55,6 +62,10 @@ export default function Popup() {
 
 	const handleCheckModal = () => {
 		sendMessage("checkModal");
+	};
+
+	const handleScrapeAll = () => {
+		sendMessage("scrapeAll");
 	};
 
 	return (
@@ -85,6 +96,13 @@ export default function Popup() {
 				disabled={isLoading}
 			>
 				Check for Modal
+			</button>
+			<button
+				onClick={handleScrapeAll}
+				className="scrape-all-button"
+				disabled={isLoading}
+			>
+				Scrape All Questions
 			</button>
 			{isLoading && <p className="loading">Loading...</p>}
 			{message && <p className="message">{message}</p>}

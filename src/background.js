@@ -11,102 +11,38 @@ chrome.runtime.onConnect.addListener(function (p) {
 	port.onMessage.addListener(function (msg) {
 		console.log("Message received in background script:", msg);
 		if (msg.action === "clickNext") {
-			chrome.tabs.query(
-				{ active: true, currentWindow: true },
-				function (tabs) {
-					chrome.scripting.executeScript(
-						{
-							target: { tabId: tabs[0].id },
-							function: clickNextButton,
-						},
-						function (results) {
-							console.log("Script execution results:", results);
-							port.postMessage({
-								action: "clickNextResult",
-								success:
-									results && results[0] && results[0].result,
-							});
-						}
-					);
-				}
-			);
+			executeScriptInActiveTab(clickNextButton, "clickNextResult");
 		} else if (msg.action === "scrapeQuestion") {
-			chrome.tabs.query(
-				{ active: true, currentWindow: true },
-				function (tabs) {
-					chrome.scripting.executeScript(
-						{
-							target: { tabId: tabs[0].id },
-							function: scrapeQuestionAndOptions,
-						},
-						function (results) {
-							console.log("Scrape results:", results);
-							if (results && results[0] && results[0].result) {
-								const data = results[0].result;
-								if (data.error) {
-									port.postMessage({
-										action: "scrapeQuestionResult",
-										success: false,
-										error: data.error,
-									});
-								} else if (data.parsedContent) {
-									port.postMessage({
-										action: "scrapeQuestionResult",
-										success: true,
-										data: data.parsedContent,
-									});
-								} else {
-									port.postMessage({
-										action: "scrapeQuestionResult",
-										success: false,
-										error: "Unexpected result format",
-									});
-								}
-							} else {
-								port.postMessage({
-									action: "scrapeQuestionResult",
-									success: false,
-									error: "Failed to execute script",
-								});
-							}
-						}
-					);
-				}
+			executeScriptInActiveTab(
+				scrapeQuestionAndOptions,
+				"scrapeQuestionResult"
 			);
 		} else if (msg.action === "checkModal") {
-			chrome.tabs.query(
-				{ active: true, currentWindow: true },
-				function (tabs) {
-					chrome.scripting.executeScript(
-						{
-							target: { tabId: tabs[0].id },
-							function: checkForModal,
-						},
-						function (results) {
-							console.log("Modal check results:", results);
-							if (
-								results &&
-								results[0] &&
-								results[0].result !== undefined
-							) {
-								port.postMessage({
-									action: "checkModalResult",
-									isModalPresent: results[0].result,
-								});
-							} else {
-								port.postMessage({
-									action: "checkModalResult",
-									isModalPresent: false,
-									error: "Failed to check for modal",
-								});
-							}
-						}
-					);
-				}
-			);
+			executeScriptInActiveTab(checkForModal, "checkModalResult");
+		} else if (msg.action === "scrapeAll") {
+			scrapeAllQuestions();
 		}
 	});
 });
+
+function executeScriptInActiveTab(func, responseAction) {
+	chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+		chrome.scripting.executeScript(
+			{
+				target: { tabId: tabs[0].id },
+				function: func,
+			},
+			function (results) {
+				console.log(`${responseAction} results:`, results);
+				port.postMessage({
+					action: responseAction,
+					success: results && results[0] && results[0].result,
+					data: results && results[0] && results[0].result,
+				});
+			}
+		);
+	});
+}
 
 function clickNextButton() {
 	const nextButton = document.querySelector(
@@ -125,4 +61,64 @@ function clickNextButton() {
 function checkForModal() {
 	const modal = document.querySelector(".modal-backdrop");
 	return !!modal;
+}
+
+async function scrapeAllQuestions() {
+	let allQuestions = [];
+	let isModalPresent = false;
+
+	while (!isModalPresent) {
+		try {
+			const results = await chrome.tabs.query({
+				active: true,
+				currentWindow: true,
+			});
+			const tab = results[0];
+
+			const scrapeResult = await chrome.scripting.executeScript({
+				target: { tabId: tab.id },
+				function: scrapeQuestionAndOptions,
+			});
+
+			if (scrapeResult && scrapeResult[0] && scrapeResult[0].result) {
+				allQuestions.push(scrapeResult[0].result);
+			}
+
+			const clickResult = await chrome.scripting.executeScript({
+				target: { tabId: tab.id },
+				function: clickNextButton,
+			});
+
+			if (!clickResult || !clickResult[0] || !clickResult[0].result) {
+				break; // Break if next button click fails
+			}
+
+			// Wait for the page to load
+			await new Promise((resolve) => setTimeout(resolve, 20));
+
+			const modalCheckResult = await chrome.scripting.executeScript({
+				target: { tabId: tab.id },
+				function: checkForModal,
+			});
+
+			isModalPresent =
+				modalCheckResult &&
+				modalCheckResult[0] &&
+				modalCheckResult[0].result;
+		} catch (error) {
+			console.error("Error in scrapeAllQuestions:", error);
+			port.postMessage({
+				action: "scrapeAllResult",
+				success: false,
+				error: error.message,
+			});
+			return;
+		}
+	}
+
+	port.postMessage({
+		action: "scrapeAllResult",
+		success: true,
+		data: allQuestions,
+	});
 }
