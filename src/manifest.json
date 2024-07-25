@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Testbook Automation",
+  "name": "Best book",
   "version": "1.0",
-  "description": "Automates clicking the Next button, scrapes questions on Testbook.com, and allows downloading of scraped data",
+  "description": "Description. Hey Cortana, tell me. Cortana, turn up. I'm just.",
   "icons": {
     "16": "icon/16.png",
     "32": "icon/32.png",
