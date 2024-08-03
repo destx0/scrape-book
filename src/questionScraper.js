@@ -2,7 +2,12 @@ export function scrapeQuestionAndOptions() {
 	try {
 		console.log("Starting scrape function");
 
-		let result = "";
+		let result = {
+			question: "",
+			options: [],
+			correctAnswer: null,
+			explanation: "",
+		};
 
 		// Check for aei-comprehension elements
 		const comprehensionElements =
@@ -12,24 +17,20 @@ export function scrapeQuestionAndOptions() {
 		);
 
 		if (comprehensionElements.length > 0) {
-			const comprehensionElement =
-				document.createElement("comprehension");
+			let comprehensionText = "";
 			comprehensionElements.forEach((element) => {
 				const divs = element.querySelectorAll("div");
 				if (divs.length >= 2) {
-					comprehensionElement.innerHTML += divs[1].innerHTML;
+					comprehensionText += divs[1].innerHTML;
 				}
 			});
-			result += comprehensionElement.outerHTML + "\n\n";
+			result.question = comprehensionText + "\n\n";
 		}
 
 		const elements = Array.from(document.querySelectorAll(".qns-view-box"));
 		console.log(
 			`Found ${elements.length} elements with class 'qns-view-box'`
 		);
-
-		const newTags = ["question", "opta", "optb", "optc", "optd", "soln"];
-		let correctOption = null;
 
 		if (elements.length > 0) {
 			let current = elements[1];
@@ -50,27 +51,25 @@ export function scrapeQuestionAndOptions() {
 
 				listItems.forEach((item, index) => {
 					if (item.querySelector(".correctness")) {
-						correctOption = index;
+						result.correctAnswer = index;
 					}
 				});
 
 				elements.forEach((element, j) => {
-					if (j < newTags.length) {
-						const newElement = document.createElement(newTags[j]);
-						newElement.innerHTML = element.innerHTML;
-						result += newElement.outerHTML + "\n\n";
+					if (j === 0) {
+						result.question += element.innerHTML;
+					} else if (j >= 1 && j <= 4) {
+						result.options.push(element.innerHTML);
+					} else if (j === 5) {
+						result.explanation = element.innerHTML;
 					}
 				});
-
-				if (correctOption !== null) {
-					result += `<correctOption>${correctOption}</correctOption>\n\n`;
-				}
 			}
 		}
 
 		console.log("Scraped data:", result);
 		return {
-			parsedContent: result || null,
+			parsedContent: result,
 			error: null,
 		};
 	} catch (error) {
