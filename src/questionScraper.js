@@ -9,6 +9,13 @@ export function scrapeQuestionAndOptions() {
 			explanation: "",
 		};
 
+		function cleanHtml(html) {
+			return html
+				.replace(/\s+/g, " ") // Replace multiple spaces with a single space
+				.replace(/>\s+</g, "><") // Remove spaces between tags
+				.trim(); // Remove leading and trailing whitespace
+		}
+
 		// Check for aei-comprehension elements
 		const comprehensionElements =
 			document.querySelectorAll(".aei-comprehension");
@@ -21,7 +28,7 @@ export function scrapeQuestionAndOptions() {
 			comprehensionElements.forEach((element) => {
 				const divs = element.querySelectorAll("div");
 				if (divs.length >= 2) {
-					comprehensionText += divs[1].innerHTML;
+					comprehensionText += cleanHtml(divs[1].innerHTML);
 				}
 			});
 			result.question = comprehensionText + "\n\n";
@@ -57,11 +64,11 @@ export function scrapeQuestionAndOptions() {
 
 				elements.forEach((element, j) => {
 					if (j === 0) {
-						result.question += element.innerHTML;
+						result.question += cleanHtml(element.innerHTML);
 					} else if (j >= 1 && j <= 4) {
-						result.options.push(element.innerHTML);
+						result.options.push(cleanHtml(element.innerHTML));
 					} else if (j === 5) {
-						result.explanation = element.innerHTML;
+						result.explanation = cleanHtml(element.innerHTML);
 					}
 				});
 			}
