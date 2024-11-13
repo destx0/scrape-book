@@ -23,6 +23,6 @@
     "downloads"
   ],
   "host_permissions": [
-    "https://testbook.com/*"
+    "*://*.testbook.com/*"
   ]
 }

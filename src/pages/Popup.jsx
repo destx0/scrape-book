@@ -43,20 +43,44 @@ export default function Popup() {
 	};
 
 	const handleDownloadData = () => {
-		const jsonString = JSON.stringify(scrapedData, null, 2);
-		const blob = new Blob([jsonString], { type: "application/json" });
-		const url = URL.createObjectURL(blob);
+		chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+			chrome.scripting.executeScript(
+				{
+					target: { tabId: tabs[0].id },
+					func: () => {
+						const element = document.querySelector(
+							".left-box.back-to-mytests.top-header.ng-scope .d-inline-block h6"
+						);
+						return element
+							? element.textContent.trim()
+							: "scraped_data";
+					},
+				},
+				(results) => {
+					const testName = results[0].result || "ssc_cgl_full_test_1";
+					const sanitizedName = testName
+						.replace(/[^a-z0-9]/gi, "_")
+						.toLowerCase();
 
-		chrome.downloads.download(
-			{
-				url: url,
-				filename: "scraped_data.json",
-				saveAs: true,
-			},
-			() => {
-				URL.revokeObjectURL(url);
-			}
-		);
+					const jsonString = JSON.stringify(scrapedData, null, 2);
+					const blob = new Blob([jsonString], {
+						type: "application/json",
+					});
+					const url = URL.createObjectURL(blob);
+
+					chrome.downloads.download(
+						{
+							url: url,
+							filename: `${sanitizedName}.json`,
+							saveAs: true,
+						},
+						() => {
+							URL.revokeObjectURL(url);
+						}
+					);
+				}
+			);
+		});
 	};
 
 	return (
